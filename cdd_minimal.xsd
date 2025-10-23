@@ -1,0 +1,247 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           targetNamespace="http://www.candela.org/CDD-Schema"
+           xmlns="http://www.candela.org/CDD-Schema"
+           elementFormDefault="qualified">
+
+  <!-- Root CANdela Document -->
+  <xs:element name="CANDELA">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="ECUDOC" minOccurs="0">
+          <xs:complexType>
+            <xs:sequence>
+              
+              <!-- Communication and timing -->
+              <xs:element name="DIDS" minOccurs="0">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element ref="DID" maxOccurs="unbounded"/>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+
+              <xs:element name="PROTOCOLSERVICES" minOccurs="0">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element ref="PROTOCOLSERVICE" maxOccurs="unbounded"/>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+
+            </xs:sequence>
+            <xs:attribute name="oid" type="xs:string"/>
+            <xs:attribute name="temploid" type="xs:string"/>
+            <xs:attribute name="doctype" type="xs:string"/>
+            <xs:attribute name="manufacturer" type="xs:string"/>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+      <xs:attribute name="dtdvers" type="xs:string"/>
+    </xs:complexType>
+  </xs:element>
+
+  <!-- Protocol Service (UDS Service) -->
+  <xs:element name="PROTOCOLSERVICE">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="NAME" minOccurs="0">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="TUV">
+                <xs:complexType>
+                  <xs:simpleContent>
+                    <xs:extension base="xs:string">
+                      <xs:attribute name="xml:lang" type="xs:string"/>
+                    </xs:extension>
+                  </xs:simpleContent>
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="QUAL" type="xs:string" minOccurs="0"/>
+        
+        <xs:element name="REQ" minOccurs="0">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="NAME" minOccurs="0">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="TUV">
+                      <xs:complexType>
+                        <xs:simpleContent>
+                          <xs:extension base="xs:string">
+                            <xs:attribute name="xml:lang" type="xs:string"/>
+                          </xs:extension>
+                        </xs:simpleContent>
+                      </xs:complexType>
+                    </xs:element>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="QUAL" type="xs:string" minOccurs="0"/>
+              <xs:element name="CONSTCOMP" minOccurs="0" maxOccurs="unbounded">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="NAME" minOccurs="0">
+                      <xs:complexType>
+                        <xs:sequence>
+                          <xs:element name="TUV">
+                            <xs:complexType>
+                              <xs:simpleContent>
+                                <xs:extension base="xs:string">
+                                  <xs:attribute name="xml:lang" type="xs:string"/>
+                                </xs:extension>
+                              </xs:simpleContent>
+                            </xs:complexType>
+                          </xs:element>
+                        </xs:sequence>
+                      </xs:complexType>
+                    </xs:element>
+                    <xs:element name="QUAL" type="xs:string" minOccurs="0"/>
+                  </xs:sequence>
+                  <xs:attribute name="id" type="xs:string"/>
+                  <xs:attribute name="spec" type="xs:string"/>
+                  <xs:attribute name="bl" type="xs:string"/>
+                  <xs:attribute name="v" type="xs:string"/>
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+            <xs:attribute name="oid" type="xs:string"/>
+          </xs:complexType>
+        </xs:element>
+
+        <xs:element name="POS" minOccurs="0">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="NAME" minOccurs="0">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="TUV">
+                      <xs:complexType>
+                        <xs:simpleContent>
+                          <xs:extension base="xs:string">
+                            <xs:attribute name="xml:lang" type="xs:string"/>
+                          </xs:extension>
+                        </xs:simpleContent>
+                      </xs:complexType>
+                    </xs:element>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="QUAL" type="xs:string" minOccurs="0"/>
+            </xs:sequence>
+            <xs:attribute name="oid" type="xs:string"/>
+          </xs:complexType>
+        </xs:element>
+
+        <xs:element name="NEG" minOccurs="0">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="NAME" minOccurs="0">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="TUV">
+                      <xs:complexType>
+                        <xs:simpleContent>
+                          <xs:extension base="xs:string">
+                            <xs:attribute name="xml:lang" type="xs:string"/>
+                          </xs:extension>
+                        </xs:simpleContent>
+                      </xs:complexType>
+                    </xs:element>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="QUAL" type="xs:string" minOccurs="0"/>
+            </xs:sequence>
+            <xs:attribute name="oid" type="xs:string"/>
+          </xs:complexType>
+        </xs:element>
+
+      </xs:sequence>
+      <xs:attribute name="id" type="xs:string"/>
+      <xs:attribute name="oid" type="xs:string"/>
+      <xs:attribute name="func" type="xs:string"/>
+      <xs:attribute name="phys" type="xs:string"/>
+      <xs:attribute name="mresp" type="xs:string"/>
+      <xs:attribute name="respOnPhys" type="xs:string"/>
+      <xs:attribute name="respOnFunc" type="xs:string"/>
+    </xs:complexType>
+  </xs:element>
+
+  <!-- Data Identifier (DID) -->
+  <xs:element name="DID">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="NAME" minOccurs="0">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="TUV">
+                <xs:complexType>
+                  <xs:simpleContent>
+                    <xs:extension base="xs:string">
+                      <xs:attribute name="xml:lang" type="xs:string"/>
+                    </xs:extension>
+                  </xs:simpleContent>
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="DESC" minOccurs="0">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="TUV">
+                <xs:complexType>
+                  <xs:simpleContent>
+                    <xs:extension base="xs:string">
+                      <xs:attribute name="xml:lang" type="xs:string"/>
+                    </xs:extension>
+                  </xs:simpleContent>
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="QUAL" type="xs:string" minOccurs="0"/>
+        <xs:element name="STRUCTURE" minOccurs="0">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="DATAOBJ" minOccurs="0">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="NAME" minOccurs="0">
+                      <xs:complexType>
+                        <xs:sequence>
+                          <xs:element name="TUV">
+                            <xs:complexType>
+                              <xs:simpleContent>
+                                <xs:extension base="xs:string">
+                                  <xs:attribute name="xml:lang" type="xs:string"/>
+                                </xs:extension>
+                              </xs:simpleContent>
+                            </xs:complexType>
+                          </xs:element>
+                        </xs:sequence>
+                      </xs:complexType>
+                    </xs:element>
+                    <xs:element name="QUAL" type="xs:string" minOccurs="0"/>
+                  </xs:sequence>
+                  <xs:attribute name="oid" type="xs:string"/>
+                  <xs:attribute name="spec" type="xs:string"/>
+                  <xs:attribute name="dtref" type="xs:string"/>
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+      <xs:attribute name="id" type="xs:string"/>
+      <xs:attribute name="oid" type="xs:string"/>
+      <xs:attribute name="n" type="xs:string"/>
+    </xs:complexType>
+  </xs:element>
+
+</xs:schema>
