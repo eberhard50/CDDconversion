@@ -1,22 +1,14 @@
-# CDD to ODX-D Converter
+# CDD Converter Tool
 
-This tool converts CANdela (.cdd) files to ODX-D format, creating machine-readable diagnostic files for UDS toolchains.
+A comprehensive tool for converting CANdela (CDD) files to multiple output formats including ODX-D, PDF documentation, and HTML overview reports.
 
-## Overview
+## 🚀 Features
 
-The converter takes your CDD file as the master source and generates a compliant ODX-D file containing:
-- All UDS diagnostic services (ReadDataByIdentifier, WriteDataByIdentifier, etc.)
-- Data Identifiers (DIDs) with proper structure
-- Communication parameters (CAN IDs, timing)
-- Diagnostic sessions and security levels
-
-## Key Features
-
-✅ **CDD as Master**: Your CDD file is the authoritative source  
-✅ **Complete UDS Support**: All standard UDS services (0x10, 0x22, 0x2E, etc.)  
-✅ **ODX-D Compliant**: Generated files follow ODX 2.2.0 specification  
-✅ **Machine Readable**: Perfect for diagnostic toolchains  
-✅ **Standard DIDs**: Includes automotive standard DIDs (VIN, ECU info, etc.)  
+- **Triple-Format Output**: Convert CDD files to ODX-D, PDF, and HTML formats simultaneously
+- **Web Interface**: User-friendly Flask web application for easy file uploads and conversions
+- **Enhanced CDD Parser**: Comprehensive parsing of CANdela database files
+- **Professional Output**: High-quality PDF documentation and responsive HTML reports
+- **Data Consistency**: All output formats use identical parsed data for consistency  
 
 ## Prerequisites
 
