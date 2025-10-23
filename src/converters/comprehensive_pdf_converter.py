@@ -75,6 +75,16 @@ class ComprehensivePDFConverter:
             fontName='Helvetica-Bold'
         ), alias='CustomHeading3')
         
+        self.styles.add(ParagraphStyle(
+            name='CustomHeading4',
+            parent=self.styles['Normal'],
+            fontSize=10,
+            spaceAfter=6,
+            spaceBefore=8,
+            textColor=colors.HexColor('#666666'),
+            fontName='Helvetica-Bold'
+        ), alias='CustomHeading4')
+        
         # Service description styles
         self.styles.add(ParagraphStyle(
             name='ServiceDescription',
@@ -97,7 +107,15 @@ class ComprehensivePDFConverter:
             rightIndent=10
         ))
         
-        # Info box style
+        # Add blue hyperlink style
+        self.styles.add(ParagraphStyle(
+            name='HyperlinkStyle',
+            parent=self.styles['Normal'],
+            fontSize=8,
+            textColor=colors.blue,
+            fontName='Helvetica',
+            underline=True
+        ))
         self.styles.add(ParagraphStyle(
             name='InfoBox',
             parent=self.styles['Normal'],
@@ -419,40 +437,33 @@ class ComprehensivePDFConverter:
             self.story.append(Spacer(1, 10))
     
     def _build_dids_section(self, cdd_data):
-        """Build DIDs section with improved formatting and links"""
+        """Build DIDs section with correct DID IDs and hyperlink navigation"""
         self.story.append(PageBreak())
         self.story.append(Paragraph("4. Data Identifiers (DIDs)", self.styles['CustomHeading1']))
         
         dids = cdd_data.get('dids', [])
         
-        # DIDs overview with simple anchor
-        self.story.append(Paragraph("4.1 DID Overview", self.styles['CustomHeading2']))
+        # DIDs overview with navigation introduction
+        overview_title = '<a name="did_overview"/>4.1 DID Overview'
+        self.story.append(Paragraph(overview_title, self.styles['CustomHeading2']))
         overview_text = f"""
         This section describes the {len(dids)} Data Identifiers (DIDs) available 
         through the ReadDataByIdentifier (0x22) and WriteDataByIdentifier (0x2E) services.
+        Each DID in the table below is linked to its detailed description in section 4.2.
         """
         self.story.append(Paragraph(overview_text, self.styles['Normal']))
         self.story.append(Spacer(1, 12))
         
-        # DIDs table with proper formatting and text wrapping
+        # DIDs table with proper formatting, correct DID IDs and hyperlinks
         did_table_data = [['DID', 'Name', 'Read', 'Write', 'Length', 'Details']]
         
         for i, did in enumerate(dids[:50]):  # Limit to first 50 for PDF size
-            # Get DID ID - try different possible attributes
-            did_id = getattr(did, 'did_id', None)
-            if did_id is None:
-                did_id = getattr(did, 'id', 0)
-            
-            # Convert to proper format if it's a string
-            if isinstance(did_id, str):
-                try:
-                    # Handle hex strings like "0xFE90" or just numbers
-                    if did_id.startswith('0x'):
-                        did_id = int(did_id, 16)
-                    else:
-                        did_id = int(did_id)
-                except ValueError:
-                    did_id = 0
+            # Get DID ID using the correct attributes from enhanced parser
+            did_hex = getattr(did, 'number_hex', None)
+            if did_hex is None:
+                # Fallback to number attribute
+                did_number = getattr(did, 'number', 0)
+                did_hex = f"0x{did_number:04X}"
             
             did_name = getattr(did, 'name', 'Unknown DID')
             
@@ -466,17 +477,53 @@ class ComprehensivePDFConverter:
             else:
                 clean_name = did_name
             
-            # Create simple reference to detailed section
-            link_text = f'Section 4.2.{i+1}'
+            # Create proper internal hyperlink to detailed section
+            detail_anchor = f'did_detail_{i+1}'
+            link_text = f'<a href="#{detail_anchor}" color="blue">Section 4.2.{i+1}</a>'
             
-            # Use Paragraph objects for text wrapping
+            # Determine read/write capabilities
+            readable = getattr(did, 'readable', True)
+            writable = getattr(did, 'writable', False)
+            
+            # Calculate proper length from data objects or fallback to DID length
+            data_objects = getattr(did, 'data_objects', [])
+            if data_objects:
+                # Sum lengths from all data objects
+                total_length = 0
+                for obj in data_objects:
+                    obj_length = getattr(obj, 'length', 0)
+                    if obj_length == 0:
+                        # Try alternative length attributes
+                        obj_length = getattr(obj, 'size', 0)
+                        if obj_length == 0:
+                            obj_length = getattr(obj, 'byte_length', 1)  # Default to 1 byte if unknown
+                    total_length += obj_length
+            else:
+                # Try direct DID length attributes
+                total_length = getattr(did, 'length', 0)
+                if total_length == 0:
+                    total_length = getattr(did, 'size', 0)
+                    if total_length == 0:
+                        total_length = getattr(did, 'byte_length', 0)
+                        if total_length == 0:
+                            # Parse from qualifier or description if available
+                            qualifier = getattr(did, 'qualifier', '')
+                            if 'byte' in qualifier.lower():
+                                import re
+                                match = re.search(r'(\d+)\s*byte', qualifier.lower())
+                                if match:
+                                    total_length = int(match.group(1))
+                                else:
+                                    total_length = 1  # Default minimum length
+            
+            # Use Paragraph objects for text wrapping and hyperlinks
             did_table_data.append([
-                Paragraph(f"0x{did_id:04X}" if isinstance(did_id, int) else str(did_id), self.styles['Normal']),
-                Paragraph(clean_name[:25], self.styles['Normal']),
-                Paragraph('✓' if getattr(did, 'readable', True) else '✗', self.styles['Normal']),
-                Paragraph('✓' if getattr(did, 'writable', False) else '✗', self.styles['Normal']),
-                Paragraph(f"{getattr(did, 'length', 0)} bytes", self.styles['Normal']),
-                Paragraph(link_text, self.styles['Normal'])
+                Paragraph(did_hex, self.styles['Normal']),
+                Paragraph(clean_name[:30], self.styles['Normal']),
+                Paragraph('✓' if readable else '✗', self.styles['Normal']),
+                Paragraph('✓' if writable else '✗', self.styles['Normal']),
+                Paragraph(f"{total_length} bytes", self.styles['Normal']),
+                Paragraph(link_text, self.styles['HyperlinkStyle'])
             ])
         
         dids_table = Table(did_table_data, colWidths=[20*mm, 35*mm, 12*mm, 12*mm, 18*mm, 23*mm])
@@ -496,89 +543,119 @@ class ComprehensivePDFConverter:
         
         self.story.append(dids_table)
         
-        # Detailed DID descriptions
+        # Add a DID index section for quick navigation
+        self.story.append(PageBreak())
+        self.story.append(Paragraph("4.1.1 DID Quick Index", self.styles['CustomHeading3']))
+        
+        # Create a compact index with hyperlinks
+        index_text = "Quick navigation to DID details:<br/><br/>"
+        for i, did in enumerate(dids[:50]):
+            did_hex = getattr(did, 'number_hex', f"0x{getattr(did, 'number', 0):04X}")
+            did_name = getattr(did, 'name', 'Unknown DID')[:20]
+            detail_anchor = f'did_detail_{i+1}'
+            index_text += f'<a href="#{detail_anchor}" color="blue">{did_hex} - {did_name}</a><br/>'
+            
+            # Add line break every 5 entries for readability
+            if (i + 1) % 5 == 0:
+                index_text += "<br/>"
+        
+        self.story.append(Paragraph(index_text, self.styles['HyperlinkStyle']))
+        
+        # Detailed DID descriptions with anchors
+        self.story.append(PageBreak())
         self.story.append(Paragraph("4.2 Detailed DID Descriptions", self.styles['CustomHeading2']))
         
-        for i, did in enumerate(dids[:15]):  # Show details for first 15 DIDs
-            # Get DID ID
-            did_id = getattr(did, 'did_id', None)
-            if did_id is None:
-                did_id = getattr(did, 'id', 0)
+        for i, did in enumerate(dids[:50]):  # Show details for first 50 DIDs
+            # Create anchor for this DID
+            detail_anchor = f'did_detail_{i+1}'
             
-            if isinstance(did_id, str):
-                try:
-                    if did_id.startswith('0x'):
-                        did_id = int(did_id, 16)
-                    else:
-                        did_id = int(did_id)
-                except ValueError:
-                    did_id = 0
-            
+            # Get DID information
+            did_hex = getattr(did, 'number_hex', f"0x{getattr(did, 'number', 0):04X}")
             did_name = getattr(did, 'name', 'Unknown DID')
-            did_description = getattr(did, 'description', '')
+            did_description = getattr(did, 'description', 'No description available')
             
             # Clean up name
             if did_name.startswith('($'):
                 parts = did_name.split(') ', 1)
-                if len(parts) > 1:
-                    clean_name = parts[1]
-                else:
-                    clean_name = did_name
+                clean_name = parts[1] if len(parts) > 1 else did_name
             else:
                 clean_name = did_name
             
-            # DID header with simple format
-            did_id_str = f"0x{did_id:04X}" if isinstance(did_id, int) else str(did_id)
-            header = f"4.2.{i+1} {clean_name} (DID: {did_id_str})"
-            self.story.append(Paragraph(header, self.styles['CustomHeading3']))
+            # Add section header with proper anchor
+            section_title = f'<a name="{detail_anchor}"/>4.2.{i+1} {did_hex} - {clean_name}'
+            self.story.append(Paragraph(section_title, self.styles['CustomHeading3']))
             
-            # Enhanced description
-            if not did_description or len(did_description) < 20:
-                did_description = f"Data Identifier {did_id_str} providing {clean_name} data for diagnostic and monitoring purposes."
+            # Add back-to-overview link
+            back_link = '<a href="#did_overview" color="blue">↑ Back to DID Overview</a>'
+            self.story.append(Paragraph(back_link, self.styles['HyperlinkStyle']))
+            self.story.append(Spacer(1, 6))
             
-            # Format description with line breaks for readability
-            formatted_desc = did_description.replace('. ', '.\n\n')
-            self.story.append(Paragraph(formatted_desc, self.styles['ServiceDescription']))
-            
-            # DID properties table with text wrapping
-            properties = [
-                ['Property', 'Value', 'Description'],
-                ['DID ID', did_id_str, 'Data Identifier value (hexadecimal)'],
-                ['Name', clean_name, 'Descriptive name of the data'],
-                ['Readable', '✓' if getattr(did, 'readable', True) else '✗', 'Can be read using ReadDataByIdentifier (0x22)'],
-                ['Writable', '✓' if getattr(did, 'writable', False) else '✗', 'Can be written using WriteDataByIdentifier (0x2E)'],
-                ['Length', f"{getattr(did, 'length', 0)} bytes", 'Data length in bytes'],
-                ['Type', getattr(did, 'type', 'Unknown'), 'Data type or category'],
+            # DID information table
+            did_info_data = [
+                ['Property', 'Value'],
+                ['DID ID', did_hex],
+                ['Name', clean_name],
+                ['Description', did_description[:100] + '...' if len(did_description) > 100 else did_description],
+                ['Readable', '✓' if getattr(did, 'readable', True) else '✗'],
+                ['Writable', '✓' if getattr(did, 'writable', False) else '✗']
             ]
             
-            # Create property table with text wrapping
-            props_table_data = []
-            for row in properties:
-                wrapped_row = []
-                for cell in row:
-                    if isinstance(cell, str) and len(cell) > 25:
-                        wrapped_row.append(Paragraph(cell, self.styles['Normal']))
-                    else:
-                        wrapped_row.append(cell)
-                props_table_data.append(wrapped_row)
+            # Add data objects information if available
+            data_objects = getattr(did, 'data_objects', [])
+            if data_objects:
+                total_length = sum(getattr(obj, 'length', 0) for obj in data_objects)
+                did_info_data.append(['Total Length', f'{total_length} bytes'])
+                did_info_data.append(['Data Objects', str(len(data_objects))])
             
-            props_table = Table(props_table_data, colWidths=[30*mm, 30*mm, 80*mm])
-            props_table.setStyle(TableStyle([
-                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#E8E8E8')),
+            did_info_table = Table(did_info_data, colWidths=[30*mm, 100*mm])
+            did_info_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#F0F0F0')),
                 ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
                 ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
-                ('FONTSIZE', (0, 0), (-1, -1), 7),
-                ('GRID', (0, 0), (-1, -1), 1, colors.black),
+                ('FONTSIZE', (0, 0), (-1, -1), 8),
+                ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
                 ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-                ('ALIGN', (1, 1), (1, -1), 'CENTER'),
-                ('WORDWRAP', (0, 0), (-1, -1), True),
-                ('SPLITBYROW', (0, 0), (-1, -1), 1),
+                ('ALIGN', (0, 0), (0, -1), 'RIGHT'),
+                ('ALIGN', (1, 0), (1, -1), 'LEFT'),
             ]))
             
-            self.story.append(props_table)
-            self.story.append(Spacer(1, 10))
-        self.story.append(Spacer(1, 12))
-    
+            self.story.append(did_info_table)
+            
+            # Add data objects details if available
+            if data_objects:
+                self.story.append(Spacer(1, 12))
+                self.story.append(Paragraph("Data Objects:", self.styles['CustomHeading4']))
+                
+                for j, data_obj in enumerate(data_objects):
+                    obj_name = getattr(data_obj, 'name', f'Object_{j+1}')
+                    obj_type = getattr(data_obj, 'data_type', 'Unknown')
+                    obj_length = getattr(data_obj, 'length', 0)
+                    obj_desc = getattr(data_obj, 'description', '')
+                    
+                    obj_text = f"<b>{obj_name}</b> ({obj_type}, {obj_length} bytes)"
+                    if obj_desc:
+                        obj_text += f": {obj_desc}"
+                    
+                    self.story.append(Paragraph(obj_text, self.styles['Normal']))
+            
+            # Add navigation to next/previous DID
+            nav_text = ""
+            if i > 0:
+                prev_anchor = f'did_detail_{i}'
+                nav_text += f'<a href="#{prev_anchor}" color="blue">← Previous DID</a>'
+            
+            if i < len(dids) - 1 and i < 49:  # Limit to 50 DIDs
+                next_anchor = f'did_detail_{i+2}'
+                if nav_text:
+                    nav_text += " | "
+                nav_text += f'<a href="#{next_anchor}" color="blue">Next DID →</a>'
+            
+            if nav_text:
+                self.story.append(Spacer(1, 12))
+                self.story.append(Paragraph(nav_text, self.styles['HyperlinkStyle']))
+            
+            self.story.append(Spacer(1, 20))
+
     def _build_appendix(self, cdd_data):
         """Build appendix with technical details"""
         self.story.append(PageBreak())
